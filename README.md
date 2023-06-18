@@ -1,2 +1,2 @@
 # estufa_automatica
-Projeto de TCC que consiste na criação de uma estufa automatizada utilizando o ESP32.
+Respositório para salvamento de arquivos e versões.
