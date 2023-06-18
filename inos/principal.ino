@@ -6,8 +6,8 @@
 // Set consts
 // WiFi Connection set
 
-#define SSID "Deus e fiel"
-#define PASSWORD "210305Ma#"
+#define SSID "SEU SSID"
+#define PASSWORD "SUA SENHA"
 
 // MQTT Connection set 
 
