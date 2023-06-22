@@ -8,7 +8,7 @@
 // WiFi Connection set
 
 #define SSID "SEU SSID"
-#define PASSWORD "210305Ma#"
+#define PASSWORD "SUA SENHA"
 
 // MQTT Connection set 
 
