@@ -2,30 +2,29 @@
 #include <PubSubClient.h>
 #include <ESPmDNS.h>
 #include <DHT.h>
+#include "ESP32_Servo.h"
 
 // Set consts
 // WiFi Connection set
 
 #define SSID "SEU SSID"
-#define PASSWORD "SUA SENHA"
+#define PASSWORD "210305Ma#"
 
 // MQTT Connection set 
 
-#define MQTT_ID "estufatcc23-ifrjesp32group-ifrjcnit"
+#define MQTT_ID "CRIE UM ID"
 #define MQTT_BROKER "broker.hivemq.com"
 #define MQTT_PORT 1883
-#define MQTT_MILLIS_TOPIC "ifrj_cnit_estufatcc_millis"
-#define MQTT_LED_TOPIC "ifrj_cnit_estufatcc_led"
-#define MQTT_TEMP_TOPIC "ifrj_cnit_estufatcc_temperatura" //topico da temperatura
-#define MQTT_HUMI_TOPIC "ifrj_cnit_estufatcc_humidade" //topico da humidade do ar
-#define MQTT_LUMINOSIDADE_TOPIC "ifrj_cnit_estufatcc_luminosidade" //topico da luminosidade
-#define MQTT_HUMISOLO_TOPIC "ifrj_cnit_estufatcc_humidadesolo" //topico da humidade do solo
+#define MQTT_NOME_TOPIC "SEU TOPICO"
 
 // Set ports
-#define LED_R 2 //led interno
 #define DHTPIN 12 //sensor DHT
-#define LDRPIN 4 //sensor LDR
-#define pinUS 14 //sensor de humidade do solo
+#define PIN_MOTOR1 27 //define porta do servo
+#define pinUS 34
+#define pinLDR 35 
+const int RelePin = 23; 
+
+// Servo motor1;
 
 // Set the type of DHT sensor
 #define DHTTYPE DHT11 
@@ -41,7 +40,6 @@ PubSubClient MQTT(espClient);
 
 // Vars
 char millis_str[10] = "";
-
 
 void setupWIFI(){
   if(WiFi.status() == WL_CONNECTED){
@@ -85,7 +83,8 @@ void setupMQTT(){
 
         if(MQTT.connect(MQTT_ID)){
             Serial.println("- MQTT Setup: Conectado com sucesso");
-             MQTT.subscribe(MQTT_LED_TOPIC);
+             MQTT.subscribe(MQTT_MOTOR_TOPIC);
+             MQTT.subscribe(MQTT_BOMBA_TOPIC);
         } else {
             Serial.println("- MQTT Setup: Falha ao se conectar, tentando novamente em 2s");
             delay(2000);
@@ -93,14 +92,18 @@ void setupMQTT(){
     }
 }
 
-void setup(void){
+void setup(){
     // Set baudrate of serial com
     Serial.begin(115200);
 
     // Pinmode
-    pinMode(LED_R, OUTPUT);
-    pinMode(LDRPIN, INPUT);
+    pinMode(RelePin, OUTPUT);
     pinMode(pinUS, INPUT);
+    pinMode(pinLDR, INPUT);
+
+
+    // motor1.attach(PIN_MOTOR1, 500, 2400);
+    digitalWrite(RelePin, HIGH); 
 
     // Call setup wifi
     setupWIFI();
@@ -110,45 +113,42 @@ void setup(void){
     dht.begin();
 }
 
-void loop(void){
+void loop(){
     sprintf(millis_str, "%d", millis()); // store printf of data (millis)
 
     MQTT.publish(MQTT_MILLIS_TOPIC, millis_str); // publish in topic
-  
-    setupWIFI();
-    setupMQTT();
-    MQTT.loop();
-    //delay(2000);
-
-    //VARIAVEIS
-    int luminosidade = analogRead(LDRPIN);
-    int humiSolo = analogRead(pinUS);
 
      // Read temperature as Celsius (the default)
     float t = dht.readTemperature();
     float h = dht.readHumidity();
-    
-    // transforma em porcentagem
-    int porcentoL = map(luminosidade, 0, 4095, 0, 100);
-    int porcentoUs = map(humiSolo, 4095, 0, 0, 100);
+    int umidadeS = analogRead(pinUS);
+    int luminosidade = analogRead(pinLDR);
 
-    MQTT.publish(MQTT_LUMINOSIDADE_TOPIC, String(porcentoL).c_str()); //publica a luminosidade
-    MQTT.publish(MQTT_HUMISOLO_TOPIC, String(porcentoUs).c_str()); //publica humidade do solo
+    int porcentoL = map(luminosidade, 0, 4095, 0, 100);
+    int porcentoUs = map(umidadeS, 4095, 0, 0, 100);
+
+    MQTT.publish(MQTT_UMISOLO_TOPIC, String(porcentoUs).c_str());
+    MQTT.publish(MQTT_LIGHT_TOPIC, String(porcentoL).c_str());
 
     //Publica a TEMPERATURA
     if (isnan(t)) { //verifica se o sensor está mandando numero
-      Serial.println(F("Failed to read from DHT sensor!"));
-      return;
+     Serial.println(F("Failed to read from DHT sensor!"));
+     return;
     } else {
-      MQTT.publish(MQTT_TEMP_TOPIC, String(t).c_str());
+      MQTT.publish(MQTT_TEMP_TOPIC, String(t, 1).c_str());
     }
     //Publica a HUMIDADE
     if (isnan(h)) { //verifica se o sensor está mandando numero
       Serial.println(F("Failed to read from DHT sensor!"));
       return;
     } else {
-      MQTT.publish(MQTT_HUMI_TOPIC, String(h).c_str());
+      MQTT.publish(MQTT_UMI_TOPIC, String(h, 0).c_str());
     }
+
+    setupWIFI();
+    setupMQTT();
+    MQTT.loop();
+    delay(2000);
 }
 
 void mqtt_ifrj_callback(char* topic, byte* payload, unsigned int length)
@@ -165,14 +165,25 @@ void mqtt_ifrj_callback(char* topic, byte* payload, unsigned int length)
   }
 
   Serial.println(msg);
-  //Controlando LED RED
-  if (msg.equals("1"))
-    {
-      digitalWrite(LED_R, HIGH);
-      Serial.println("L recebido");
-    } else if (msg.equals("0"))
-    {
-      digitalWrite(LED_R, LOW);
-      Serial.println("D recebido");
+  //Controlando teto motor 
+  // if (msg.equals("M1")) {
+  //    for (int pos = 180; pos >= 0; pos -= 1) {
+  //     motor1.write(pos); //motor roda 160 graus
+  //     delay(5);
+  //     }
+  //     Serial.println("MOTOR INDO");
+  //   } else if (msg.equals("M0")) {
+  //     for (int pos = 0; pos <= 180; pos += 1) {
+  //     motor1.write(pos);
+  //     delay(5);
+  //     } 
+  //     Serial.println("MOTOR VOLTANDO");
+  //   }
+  if (msg.equals("B1")) {
+      digitalWrite(RelePin, LOW);  //desativa o pino
+      Serial.println("LIGANDO BOMBA");
+    } else if (msg.equals("B0")) {
+      digitalWrite(RelePin, HIGH); //aciona o pino
+      Serial.println("DESLIGANDO BOMBA");
     }
 }
