@@ -168,7 +168,7 @@ void loop(){
     delay(2000);
 }
 
-void mqtt_ifrj_callback(char* topic, byte* payload, unsigned int length)
+void mqtt_callback(char* topic, byte* payload, unsigned int length)
 {
   String msg;
   Serial.print("Topic: ");
