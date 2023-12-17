@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "SmartPlant",
+    "slug": "snack-eba436b1-9bdb-4f17-b513-036929130ea5",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF176"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFF176"
+      },
+      "package": "com.fernandojeff.smartplant"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7f1b1705-8cb6-4374-a4fb-cc668611ff42"
+      }
+    }
+  }
+}
